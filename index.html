@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Health Effects of Marijuana Use</title>
+		<script type="text/javascript" src="d3/d3.v3.min.js"></script>
+		<script type="text/javascript" src="d3/d3.tip.v0.6.3.js"></script>
+		<style>
+			body { 
+			    background: white url("2000px-Female_shadow_anatomy_without_labels.png") no-repeat fixed center;
+			    background-size: 250px 848.5px;
+			    /*background-size: 25%;*/
+			    background-position: 300px 50px;
+			    background-attachment: scroll;
+			    
+			}
+
+			.d3tip {	
+			    border-radius: 4px;
+                padding-top: 6px;
+                padding-left: 8px;
+                padding-right: 8px;
+                padding-bottom: 6px;
+                line-height: 1.5;
+                font-family: sans-serif;
+				font-size: 11px;
+                font-weight: bold;
+                /*background-color: rgba(255, 0, 0, 0.4);*/
+                background-color: pink;
+                color: navy;	
+                width: 300px;		
+			}	
+
+			
+
+			.right {
+				height: 90px;
+				width: 90px;
+				background-color: none;
+				float: right;
+				position: absolute;
+				left: 200px;
+    			top: 100px;
+				margin-top: 5px;
+				}
+
+			.tip{
+                height: 30px;
+                width: 100px;
+            }
+
+		</style>
+	</head>
+
+	<div class="right"></div>
+
+	<body>
+		<script type="text/javascript">
+
+			//Width and height
+			var margin = {top: 40, right: 400, bottom: 0, left: 269};
+			var w = 150;
+			var h = 850;
+			var padding = 20;
+			var points = [];
+			var pointsGood = [];
+			var pointsBad = [];
+			
+
+			d3.csv("HealthEffectsD3.csv", function(data) {
+			//d3.csv("MarijuanaEffects.csv", function(data) {			
+				for (var i = 0; i < data.length; i++) {
+					var x = data[i].X;
+					var y = data[i].Y;
+					var u = data[i].Use;
+					var a = data[i].Anatomy;
+					var e = data[i].Effects;
+					var k = data[i].Top5;
+					var s = data[i].scale;
+
+					points.push([x, y, u, a, e, k, s]);
+
+					if (u=="Drug Abuse") {
+						pointsBad.push([x, y, u, a, e, k, s])
+					} else {
+						pointsGood.push([x, y, u, a, e, k, s])
+					}
+				}
+	
+			//Create SVG element
+			var svg = d3.select("body")
+				    .append("svg")
+				    .attr("width", w + margin.left + margin.right)
+			        .attr("height", h + margin.top + margin.bottom)
+			        .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+			//Create scale functions
+			var xScale = d3.scale.linear()
+					.domain([0, d3.max(points, function(d) { return d[0]; })])
+					.range([padding, w - padding * 2]);
+
+			var yScale = d3.scale.linear()
+					.domain([0, d3.max(points, function(d) { return d[1]; })])
+					.range([h - padding, padding]);
+
+			var wnScale = d3.scale.linear()
+						.domain([0, d3.max(pointsGood, function(d) { return d[6]; })])
+						.range([5, 8]);
+
+			//Define X axes
+			var xAxis = d3.svg.axis()
+					.scale(xScale);
+
+
+			//Define Y axes
+			var yAxis = d3.svg.axis()
+					.scale(yScale)
+
+
+			// Define the div for the tooltip
+			var div = d3.tip()
+					//.append("div")	
+    				.attr("class", "d3tip")	
+    				.offset([5,2])	
+    				.html(function(d) {
+            			if (d[2] == 'Drug Abuse') {
+            				return "Anatomy: " + d[3] + "<br/>" + "Facts: " + d[5];
+            			} else {
+            				return "Ailment: " + d[3] + "<br/>"
+   			   						+ "Keywords: " + d[5] + "<br/>"
+   			   						+ "% reported: " + d[6];
+            			}
+            		})		
+    				
+    		svg.call(div);
+
+			svg.selectAll("circle")
+			   .data(points)
+			   .enter()
+			   .append("circle")
+			   .attr("fill", function(d){
+			   		if (d[2] == "Drug Abuse") {
+			   			return "Crimson"
+			   		} else {
+			   			return "CornflowerBlue"
+			   		}
+			   	})
+			   .attr("stroke", "white")
+			   .attr("cx", function(d) {
+			   		return xScale(d[0]);
+			   })
+			   .attr("cy", function(d) {
+			   		return yScale(d[1]);
+			   })
+			   //.attr("r", 5) 
+			   .attr("r", function(d) {
+			   		if (d[2] == "Drug Use") {
+			   			return 5
+			   		} else {
+			   			return wnScale(d[6])
+			   		}
+			   	})
+
+			   	.on("mouseover", function(d) {
+			   		div.show(d)
+            		d3.select(this)
+                    .style("fill", "Lime")
+
+                    //Add the canvas
+                    var hgsvg = d3.select("#tip")
+                        .append("svg")
+                        .attr("width", 350)
+                        .attr("height", 0)
+                        .append("g")
+                })
+
+            	.on("mouseout", function(d) {
+            		div.hide(d)
+            		d3.select(this)
+                    .style("fill", function(d){
+				   		if (d[2] == "Drug Abuse") {
+				   			return "Crimson"
+				   		} else {
+				   			return "CornflowerBlue"
+				   		}
+				   	})			
+            		//div.style("opacity", 0)
+        		});
+
+
+			//Create figure titles
+			svg.append("text")
+				.attr("class", "title")
+				.attr("x", w)
+				.attr("y", 0 - (margin.top / 3))
+				.attr("text-anchor", "middle")
+				.style("font-size", "14px") 
+				.style("font-weight", "bold")
+				.text("Health Effects of Marijuana (Medical Use vs. Recreational Drug Abuse)");
+
+			//Create figure subtitle
+			svg.append("text")
+				.attr("class", "title")
+				.attr("x", w)
+				.attr("y", 0 - (margin.top / 20))
+				.attr("text-anchor", "middle")
+				.style("font-size", "10px") 
+				.style("font-weight", "bold")
+				.text("(Sources: Minnesota Medical Cannabis Program: Patient Experiences From the First Program Year and the Report of the National Commission on Ganja)")
+				.attr("fill", "blue");
+
+
+			//Add legends
+			var legend = d3.select('.right')
+			    .attr('class', 'right')
+			    .attr('transform', function(d, i) {
+			        var height = 100;
+			        var x = 0;
+			        var y = i * height;
+			        return 'translate(' + x + ',' + y + ')';
+			    });
+
+
+			svg.append("circle")
+					.attr("cx", -55)
+					.attr("cy", 90)
+					.attr("r", 6)
+					.attr("fill", "CornflowerBlue")
+					
+
+			svg.append("text")
+					.attr("x", -50)
+					.attr("y", 105)
+					.attr("dx", "0.5em")
+					.attr("dy", "-1.1em")
+					.style("text-anchor", "start")
+					.attr("font-family", "sans-serif")
+			   		.attr("font-size", "10px")
+					.text("Medical Use")
+					.attr("fill","indigo")
+					.style("font-weight", "bold");
+
+			svg.append("circle")
+					.attr("cx", -55)
+					.attr("cy", 110)
+					.attr("r", 6)
+					.attr("fill", "Crimson")
+					
+
+			svg.append("text")
+					.attr("x", -50)
+					.attr("y", 125)
+					.attr("dx", "0.5em")
+					.attr("dy", "-1.1em")
+					.style("text-anchor", "start")
+					.attr("font-family", "sans-serif")
+			   		.attr("font-size", "10px")
+					.text("Recreational Drug Abuse")
+					.attr("fill","indigo")
+					.style("font-weight", "bold");
+
+
+		});
+
+
+			
+		</script>
+	</body>
+</html>
